@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Snowflakes</title>
+    <style>
+        body {
+            background: #000000
+        }
+
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            border: none;
+            margin: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="cvs"></canvas>
+    <script>
+        class Snowflake {
+            constructor(r) {
+                this.x = this.spawn(r);
+                this.y = -r;
+                this.r = r;
+                this.gravity = baseGravity * r / 10;
+            }
+
+            spawn(r) {
+                return Math.floor(Math.random() * (cvs.width - (r * 2))) + r;
+            }
+
+            draw() {
+                ctx.fillStyle = "#ffffff";
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.r, 0, 2 * Math.PI);
+                ctx.fill();
+
+                this.move();
+            }
+
+            move() {
+                this.y += this.gravity;
+            }
+        }
+    </script>
+
+    <script>
+        const cvs = document.getElementById("cvs");
+        const ctx = cvs.getContext("2d")
+
+        resizeCanvas()
+        window.onresize = () => resizeCanvas()
+
+        const baseGravity = 10;
+        const minSize = 2;
+        const maxSize = 15;
+
+        const snowflakes = [];
+
+        (function animate() {
+            ctx.clearRect(0, 0, cvs.width, cvs.height);
+
+            const radius = getRandomRadius(minSize, maxSize);
+            snowflakes.push(new Snowflake(radius));
+
+            for (let i = 0; i < snowflakes.length; i++) {
+                snowflakes[i].draw();
+            }
+
+            requestAnimationFrame(animate);
+        })();
+
+        function getRandomRadius(minSize, maxSize) {
+            return Math.floor((Math.random() * maxSize) + minSize);
+        }
+
+        function resizeCanvas(canvas) {
+            var viewportHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+            var viewportWidth = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+            cvs.height = (viewportHeight);
+            cvs.width = (viewportWidth);
+        }
+
+    </script>
+</body>
+
+</html>
