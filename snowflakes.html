@@ -25,18 +25,54 @@
 <body>
     <canvas id="cvs"></canvas>
     <script>
+
+        // Snowflake Object
         class Snowflake {
-            constructor(r) {
-                this.x = this.spawn(r);
-                this.y = -r;
-                this.r = r;
-                this.gravity = baseGravity * r / 10;
+
+            constructor(minSize, maxSize, baseGravity) {                
+                this.minSize = minSize;
+                this.maxSize = maxSize;
+                this.baseGravity = baseGravity;
+
+                this.r = this.getRandomRadius();
+                this.x = this.spawn();
+                this.y = -this.r; // Just above the canvas
+
+                var averageSize = minSize + maxSize / 2;
+                var weight = this.r / 10;
+
+                // The bigger the radius,
+                // the stronger the gravity
+                // 
+                // Example:
+                //
+                // Snowflakes are between size 5 and 15
+                //
+                // Average Size = 10
+                // Base Gravity = 8
+                //
+                // Sample Snowflake:
+                // Radius = 15
+                // Weight = 15 / 10 = 1.5
+                // Gravity = 8 * 1.5 = 12
+                //
+                // A Radius 15 Snowflake falls 1.5 times faster than
+                // A Radius 10 Snowflake, and 3 times faster than
+                // A Radius 5 Snowflake
+                this.gravity = baseGravity * weight;
             }
 
-            spawn(r) {
-                return Math.floor(Math.random() * (cvs.width - (r * 2))) + r;
+            // Get a random snowflake radius within bounds
+            getRandomRadius() {
+                return Math.floor((Math.random() * (this.maxSize - this.minSize + 1) + this.minSize));
             }
 
+            // Spawn a snowflake at a random horizontal position
+            spawn() {
+                return Math.floor(Math.random() * (cvs.width - (this.r * 2))) + this.r;
+            }
+
+            // Draw the snowflake
             draw() {
                 ctx.fillStyle = "#ffffff";
                 ctx.beginPath();
@@ -46,42 +82,80 @@
                 this.move();
             }
 
+            // Move the snowflake according to its gravity
             move() {
                 this.y += this.gravity;
             }
         }
+        
     </script>
 
     <script>
-        const cvs = document.getElementById("cvs");
-        const ctx = cvs.getContext("2d")
 
-        resizeCanvas()
-        window.onresize = () => resizeCanvas()
+        ///////////////////////////
+        // Canvas Initialization //
+        ///////////////////////////
+
+
+        const cvs = document.getElementById("cvs");
+        const ctx = cvs.getContext("2d");
+
+        resizeCanvas();
+        window.onresize = () => resizeCanvas();
+
+
+        ///////////////
+        // Constants //
+        ///////////////
+
 
         const baseGravity = 10;
         const minSize = 2;
-        const maxSize = 15;
+        const maxSize = 17;
 
         const snowflakes = [];
 
-        (function animate() {
+
+        ////////////////
+        // Main Logic //
+        ////////////////
+
+
+        (function snow() {
             ctx.clearRect(0, 0, cvs.width, cvs.height);
 
-            const radius = getRandomRadius(minSize, maxSize);
-            snowflakes.push(new Snowflake(radius));
+            snowflakes.push(new Snowflake(minSize, maxSize, baseGravity));
 
             for (let i = 0; i < snowflakes.length; i++) {
                 snowflakes[i].draw();
             }
 
-            requestAnimationFrame(animate);
+            requestAnimationFrame(snow);
         })();
 
-        function getRandomRadius(minSize, maxSize) {
-            return Math.floor((Math.random() * maxSize) + minSize);
+        // Clear offscreen snowflakes every 2 seconds
+        // so as to not impact performance
+        setInterval(clearOffscreen, 2000)
+
+
+        ///////////////////////
+        // Utility Functions //
+        ///////////////////////
+
+
+        // Remove offscreen snowflakes from the array
+        function clearOffscreen() {
+            snowflakes.sort((a, b) => a.y - b.y);
+
+            var firstOffscreen = snowflakes.findIndex(e => e.y > cvs.height);
+            var restOffscreen = snowflakes.length - firstOffscreen;
+
+            if (firstOffscreen > -1) {
+                snowflakes.splice(firstOffscreen, restOffscreen);
+            }
         }
 
+        // Function to keep the canvas size equal to the screen size
         function resizeCanvas(canvas) {
             var viewportHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
             var viewportWidth = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
